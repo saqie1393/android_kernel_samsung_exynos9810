@@ -61,13 +61,15 @@ jobs:
           out/arch/arm64/boot/dts/exynos/exynos9810-star2lte_eur_open_26.dtb \
           > out/arch/arm64/boot/Image.gz-dtb
 
-
       - name: Repack DerpFest boot.img
         run: |
-          git clone --depth=1 \
-          https://github.com/osm0sis/AnyKernel3.git AK3
+          wget https://github.com/topjohnwu/Magisk/releases/download/v29.0/Magisk-v29.0.apk -O Magisk.apk
 
-          chmod +x AK3/tools/magiskboot
+          unzip Magisk.apk "lib/x86_64/libmagiskboot.so"
+
+          mv lib/x86_64/libmagiskboot.so magiskboot
+
+          chmod +x magiskboot
 
           mkdir bootwork
 
@@ -75,11 +77,11 @@ jobs:
 
           cd bootwork
 
-          ../AK3/tools/magiskboot unpack boot.img
+          ../magiskboot unpack boot.img
 
           cp ../out/arch/arm64/boot/Image.gz-dtb kernel
 
-          ../AK3/tools/magiskboot repack boot.img
+          ../magiskboot repack boot.img
 
           mv new-boot.img ../S9Plus-DerpFest-A13-KernelSU-Next.img
 
