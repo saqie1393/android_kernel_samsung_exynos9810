@@ -1,4 +1,4 @@
-name: Build S9+ KernelSU Next AnyKernel3
+name: Build S9+ DerpFest KernelSU Next Boot
 
 on:
   workflow_dispatch:
@@ -13,6 +13,7 @@ jobs:
         with:
           fetch-depth: 1
 
+
       - name: Install Dependencies
         run: |
           sudo apt update
@@ -22,11 +23,12 @@ jobs:
             python3 unzip zip cpio rsync \
             gcc-aarch64-linux-gnu
 
+
       - name: Clone AOSP Clang
         run: |
           git clone --depth=1 \
-            https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
-            -b android-11.0.0_r48 clang
+          https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
+          -b android-11.0.0_r48 clang
 
 
       - name: Setup KernelSU Next
@@ -52,7 +54,7 @@ jobs:
             CROSS_COMPILE=aarch64-linux-gnu-
 
 
-      - name: Make Image.gz-dtb
+      - name: Create Image.gz-dtb
         run: |
           cat \
           out/arch/arm64/boot/Image.gz \
@@ -60,21 +62,30 @@ jobs:
           > out/arch/arm64/boot/Image.gz-dtb
 
 
-      - name: Build AnyKernel3 ZIP
+      - name: Repack DerpFest boot.img
         run: |
-          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel3
+          git clone --depth=1 \
+          https://github.com/osm0sis/AnyKernel3.git AK3
 
-          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
+          chmod +x AK3/tools/magiskboot
 
-          cd AnyKernel3
+          mkdir bootwork
 
-          rm -rf .git README.md
+          cp boot.img bootwork/
 
-          zip -r9 ../S9Plus-star2lte-KernelSU-Next.zip *
+          cd bootwork
+
+          ../AK3/tools/magiskboot unpack boot.img
+
+          cp ../out/arch/arm64/boot/Image.gz-dtb kernel
+
+          ../AK3/tools/magiskboot repack boot.img
+
+          mv new-boot.img ../S9Plus-DerpFest-A13-KernelSU-Next.img
 
 
-      - name: Upload Flashable Kernel ZIP
+      - name: Upload Final boot.img
         uses: actions/upload-artifact@v4
         with:
-          name: S9Plus-star2lte-KernelSU-Next-Flashable
-          path: S9Plus-star2lte-KernelSU-Next.zip
+          name: S9Plus-DerpFest-A13-KernelSU-Next-boot
+          path: S9Plus-DerpFest-A13-KernelSU-Next.img
