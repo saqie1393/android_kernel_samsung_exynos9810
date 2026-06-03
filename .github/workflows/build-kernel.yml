@@ -15,9 +15,9 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y \
-          bc bison build-essential curl flex git \
-          libssl-dev libelf-dev lld llvm \
-          python3 unzip zip cpio rsync
+            bc bison build-essential curl flex git \
+            libssl-dev libelf-dev lld llvm \
+            python3 unzip zip cpio rsync
 
       - name: Clone Proton Clang
         run: |
@@ -25,9 +25,7 @@ jobs:
 
       - name: Setup KernelSU Next
         run: |
-          curl -LSs \
-          https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/main/kernel/setup.sh \
-          | bash -
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
 
       - name: Build Kernel
         run: |
@@ -40,14 +38,14 @@ jobs:
           make O=out exynos9810-star2lte_defconfig
 
           make -j$(nproc) \
-          O=out \
-          CC=clang \
-          LLVM=1 \
-          LLVM_IAS=1
+            O=out \
+            CC=clang \
+            LLVM=1 \
+            LLVM_IAS=1
 
       - name: Collect Files
         run: |
-          mkdir kernel_out
+          mkdir -p kernel_out
 
           find out/arch/arm64/boot -name "Image*" -exec cp {} kernel_out/ \;
           find out/arch/arm64/boot -name "*.dtb" -exec cp {} kernel_out/ \; || true
@@ -56,5 +54,5 @@ jobs:
       - name: Upload Kernel
         uses: actions/upload-artifact@v4
         with:
-          name: S9Plus-KernelSU-Next
+          name: S9Plus-star2lte-KernelSU-Next
           path: kernel_out/
