@@ -10,18 +10,23 @@ jobs:
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Install Dependencies
         run: |
           sudo apt update
           sudo apt install -y \
-            bc bison build-essential curl flex git \
-            libssl-dev libelf-dev lld llvm \
-            python3 unzip zip cpio rsync
+            bc bison build-essential curl flex git wget \
+            libssl-dev libelf-dev \
+            python3 unzip zip cpio rsync \
+            gcc-aarch64-linux-gnu
 
-      - name: Clone Proton Clang
+      - name: Clone AOSP Clang
         run: |
-          git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
+          git clone --depth=1 \
+            https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
+            -b android-11.0.0_r48 clang
 
       - name: Setup KernelSU Next
         run: |
@@ -31,7 +36,8 @@ jobs:
         run: |
           export ARCH=arm64
           export SUBARCH=arm64
-          export PATH=$PWD/clang/bin:$PATH
+
+          export PATH=$PWD/clang/clang-r383902/bin:$PATH
 
           mkdir -p out
 
@@ -40,19 +46,24 @@ jobs:
           make -j$(nproc) \
             O=out \
             CC=clang \
-            LLVM=1 \
-            LLVM_IAS=1
+            CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE=aarch64-linux-gnu-
 
-      - name: Collect Files
+      - name: Collect Kernel Files
         run: |
           mkdir -p kernel_out
 
-          find out/arch/arm64/boot -name "Image*" -exec cp {} kernel_out/ \;
-          find out/arch/arm64/boot -name "*.dtb" -exec cp {} kernel_out/ \; || true
-          find out/arch/arm64/boot -name "*.dtbo" -exec cp {} kernel_out/ \; || true
+          find out/arch/arm64/boot -name "Image*" \
+            -exec cp {} kernel_out/ \;
+
+          find out/arch/arm64/boot -name "*.dtb" \
+            -exec cp {} kernel_out/ \; || true
+
+          find out/arch/arm64/boot -name "*.dtbo" \
+            -exec cp {} kernel_out/ \; || true
 
       - name: Upload Kernel
         uses: actions/upload-artifact@v4
         with:
-          name: S9Plus-star2lte-KernelSU-Next
+          name: Galaxy-S9Plus-star2lte-KernelSU-Next
           path: kernel_out/
