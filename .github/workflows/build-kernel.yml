@@ -1,4 +1,4 @@
-name: Build S9+ KernelSU Next
+name: Build S9+ KernelSU Next AnyKernel3
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout Source
+      - name: Checkout Kernel Source
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
@@ -28,9 +28,11 @@ jobs:
             https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
             -b android-11.0.0_r48 clang
 
+
       - name: Setup KernelSU Next
         run: |
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
+
 
       - name: Build Kernel
         run: |
@@ -49,21 +51,30 @@ jobs:
             CLANG_TRIPLE=aarch64-linux-gnu- \
             CROSS_COMPILE=aarch64-linux-gnu-
 
-      - name: Collect Kernel Files
+
+      - name: Make Image.gz-dtb
         run: |
-          mkdir -p kernel_out
+          cat \
+          out/arch/arm64/boot/Image.gz \
+          out/arch/arm64/boot/dts/exynos/exynos9810-star2lte_eur_open_26.dtb \
+          > out/arch/arm64/boot/Image.gz-dtb
 
-          find out/arch/arm64/boot -name "Image*" \
-            -exec cp {} kernel_out/ \;
 
-          find out/arch/arm64/boot -name "*.dtb" \
-            -exec cp {} kernel_out/ \; || true
+      - name: Build AnyKernel3 ZIP
+        run: |
+          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel3
 
-          find out/arch/arm64/boot -name "*.dtbo" \
-            -exec cp {} kernel_out/ \; || true
+          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
 
-      - name: Upload Kernel
+          cd AnyKernel3
+
+          rm -rf .git README.md
+
+          zip -r9 ../S9Plus-star2lte-KernelSU-Next.zip *
+
+
+      - name: Upload Flashable Kernel ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: Galaxy-S9Plus-star2lte-KernelSU-Next
-          path: kernel_out/
+          name: S9Plus-star2lte-KernelSU-Next-Flashable
+          path: S9Plus-star2lte-KernelSU-Next.zip
